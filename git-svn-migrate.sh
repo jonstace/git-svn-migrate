@@ -223,7 +223,7 @@ do
 
   # Rename Subversion's "trunk" branch to Git's standard "master" branch.
   cd $destination/$name.git;
-  git branch -m trunk master;
+  git branch -m origin/trunk origin/master;
 
   # Remove bogus branches of the form "name@REV".
   git for-each-ref --format='%(refname)' refs/heads | grep '@[0-9][0-9]*' | cut -d / -f 3- |
@@ -234,11 +234,19 @@ do
 
   # Convert git-svn tag branches to proper tags.
   echo "- Converting svn tag directories to proper git tags..." >&2;
-  git for-each-ref --format='%(refname)' refs/heads/tags | cut -d / -f 4 |
+  git for-each-ref --format='%(refname)' refs/heads/origin/tags | cut -d / -f 5 |
   while read ref
   do
-    git tag -a "$ref" -m "Convert \"$ref\" to a proper git tag." "refs/heads/tags/$ref";
-    git branch -D "tags/$ref";
+    git tag -a "$ref" -m "Convert \"$ref\" to a proper git tag." "refs/heads/origin/tags/$ref";
+    git branch -D "origin/tags/$ref";
+  done
+
+  echo "- Removing the 'origin' reference from the remaining branches" >&2;
+  # Rename the branches to remove the origin reference
+  git for-each-ref --format='%(refname)' refs/heads/origin | cut -d / -f 4 |
+  while read ref
+  do
+    git branch -m "origin/$ref" "$ref";
   done
 
   echo "- Conversion completed at $(date)." >&2;
